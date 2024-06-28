@@ -1,13 +1,24 @@
 import axios from "axios";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery /*useQueryClient*/ } from "react-query";
 
 import "./App.css";
 
 function App() {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery("todos", () =>
-    axios.get("http://localhost:8080/todos").then((response) => response.data)
+  const { data, isLoading, error, refetch } = useQuery(
+    "todos",
+    () => {
+      return axios
+        .get("http://localhost:8080/todos")
+        .then((response) => response.data);
+    },
+    {
+      // retry: 5,
+      // refetchOnWindowFocus: true,
+      // refetchInterval: 5000,
+      // initialData: [],
+    }
   );
 
   const mutation = useMutation({
@@ -19,12 +30,14 @@ function App() {
         .then((response) => response.data);
     },
     onSuccess: (data) => {
-      queryClient.setQueryData("todos", (currentData) =>
-        currentData.map((todo) => (todo.id === data.id ? data : todo))
-      );
+      console.log({ data });
+      refetch();
+      // queryClient.setQueryData("todos", (currentData) => {
+      //   currentData.map((todo) => (todo.id === data.id ? data : todo));
+      // });
     },
     onError: (error) => {
-      console.error(error);
+      console.log(error);
     },
   });
 
@@ -42,9 +55,9 @@ function App() {
         <h2>Todos & React Query</h2>
         {data.map((todo) => (
           <div
-            onClick={() =>
-              mutation.mutate({ todoId: todo.id, completed: !todo.completed })
-            }
+            onClick={() => {
+              mutation.mutate({ todoId: todo.id, completed: !todo.completed });
+            }}
             className={`todo ${todo.completed && "todo-completed"}`}
             key={todo.id}
           >
